@@ -141,6 +141,25 @@ module VCAP::CloudController
 
         expect(message).to be_valid
       end
+
+      it 'returns no validation errors when CF_EXECUTION_BACKEND names a known backend' do
+        message = UpdateEnvironmentVariablesMessage.new({ var: { CF_EXECUTION_BACKEND: 'vm-qemu' } })
+
+        expect(message).to be_valid
+      end
+
+      it 'returns no validation errors when CF_EXECUTION_BACKEND is unset' do
+        message = UpdateEnvironmentVariablesMessage.new({ var: { CF_EXECUTION_BACKEND: nil } })
+
+        expect(message).to be_valid
+      end
+
+      it 'returns a validation error when CF_EXECUTION_BACKEND names an unknown backend' do
+        message = UpdateEnvironmentVariablesMessage.new({ var: { CF_EXECUTION_BACKEND: 'vm-qemuu' } })
+
+        expect(message).not_to be_valid
+        expect(message.errors_on(:var)).to include('CF_EXECUTION_BACKEND must be one of oci-runc, oci-gvisor, vm-qemu, or vm-firecracker')
+      end
     end
   end
 end

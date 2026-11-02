@@ -3418,6 +3418,18 @@ RSpec.describe 'Apps' do
 
       it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
     end
+
+    context 'when CF_EXECUTION_BACKEND names an unknown backend' do
+      let(:update_request) { { var: { CF_EXECUTION_BACKEND: 'vm-kvm' } } }
+
+      it 'returns a 422 and leaves the environment unchanged' do
+        api_call.call(admin_header)
+
+        expect(last_response).to have_status_code(422)
+        expect(parsed_response['errors'][0]['detail']).to include('CF_EXECUTION_BACKEND must be one of oci-runc, oci-gvisor, vm-qemu, or vm-firecracker')
+        expect(app_model.reload.environment_variables).to eq({ 'override' => 'original', 'preserve' => 'keep' })
+      end
+    end
   end
 
   describe 'GET /v3/apps/:guid/environment_variables' do

@@ -18,6 +18,7 @@ module VCAP::CloudController
 
     validates :name, string: true, length: { maximum: 255, message: 'is too long (maximum is 255 characters)' }
     validates :environment_variables, hash: true, allow_nil: true
+    validates :environment_variables, execution_backend: true, allow_nil: true
 
     validates :lifecycle_type,
               string: true,

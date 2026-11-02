@@ -264,6 +264,51 @@ module VCAP::CloudController::Validators
       end
     end
 
+    describe 'ExecutionBackendValidator' do
+      let(:execution_backend_class) do
+        Class.new(fake_class) do
+          validates :field, execution_backend: true
+        end
+      end
+
+      it 'accepts each known backend' do
+        %w[oci-runc oci-gvisor vm-qemu vm-firecracker].each do |backend|
+          expect(execution_backend_class.new(field: { 'CF_EXECUTION_BACKEND' => backend })).to be_valid
+          expect(execution_backend_class.new(field: { CF_EXECUTION_BACKEND: backend })).to be_valid
+        end
+      end
+
+      it 'accepts environments that do not choose a backend' do
+        expect(execution_backend_class.new(field: { OTHER: 'value' })).to be_valid
+        expect(execution_backend_class.new(field: {})).to be_valid
+      end
+
+      it 'accepts an empty or nil backend, which means the default' do
+        expect(execution_backend_class.new(field: { CF_EXECUTION_BACKEND: '' })).to be_valid
+        expect(execution_backend_class.new(field: { CF_EXECUTION_BACKEND: nil })).to be_valid
+      end
+
+      it 'leaves values that are not a hash to the other validators' do
+        expect(execution_backend_class.new(field: 'potato')).to be_valid
+        expect(execution_backend_class.new(field: nil)).to be_valid
+      end
+
+      it 'rejects an unknown backend' do
+        fake_class = execution_backend_class.new field: { CF_EXECUTION_BACKEND: 'vm-kvm' }
+        expect(fake_class).not_to be_valid
+        expect(fake_class.errors[:field]).to include 'CF_EXECUTION_BACKEND must be one of oci-runc, oci-gvisor, vm-qemu, or vm-firecracker'
+      end
+
+      it 'matches backend names exactly' do
+        fake_class = execution_backend_class.new field: { 'CF_EXECUTION_BACKEND' => 'VM-QEMU' }
+        expect(fake_class).not_to be_valid
+      end
+
+      it 'checks only the exact variable name' do
+        expect(execution_backend_class.new(field: { cf_execution_backend: 'anything' })).to be_valid
+      end
+    end
+
     describe 'EnvironmentVariablesStringValuesValidator' do
       let(:environment_variables_class) do
         Class.new(fake_class) do

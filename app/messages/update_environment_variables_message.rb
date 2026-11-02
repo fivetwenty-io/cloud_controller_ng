@@ -7,6 +7,7 @@ module VCAP::CloudController
     validates_with NoAdditionalKeysValidator
 
     validates :var, environment_variables_string_values: true
+    validates :var, execution_backend: true
 
     def self.for_env_var_group(params)
       params = { var: {} } if params == {}

@@ -246,6 +246,37 @@ module VCAP::CloudController
             create(:app_model, environment_variables: '')
           end.to raise_error(Sequel::ValidationFailed, /must be an object/)
         end
+
+        it 'rejects an unknown execution backend' do
+          expect do
+            create(:app_model, environment_variables: { 'CF_EXECUTION_BACKEND' => 'vm-unknown' })
+          end.to raise_error(Sequel::ValidationFailed, /CF_EXECUTION_BACKEND must be one of/)
+        end
+
+        it 'accepts a known execution backend' do
+          expect(create(:app_model, environment_variables: { 'CF_EXECUTION_BACKEND' => 'vm-qemu' })).to be_valid
+        end
+
+        context 'when an existing app already has an unknown execution backend' do
+          let(:app) { create(:app_model, environment_variables: { 'CF_EXECUTION_BACKEND' => 'vm-qemu' }) }
+
+          before do
+            app.environment_variables = { 'CF_EXECUTION_BACKEND' => 'legacy' }
+            app.save(validate: false)
+            app.reload
+          end
+
+          it 'still saves changes to other fields' do
+            app.name = 'renamed'
+            expect { app.save }.not_to raise_error
+            expect(app.reload.name).to eq('renamed')
+          end
+
+          it 'rejects a change to the environment that keeps the unknown backend' do
+            app.environment_variables = app.environment_variables.merge('OTHER' => 'value')
+            expect { app.save }.to raise_error(Sequel::ValidationFailed, /CF_EXECUTION_BACKEND must be one of/)
+          end
+        end
       end
 
       describe 'droplet' do

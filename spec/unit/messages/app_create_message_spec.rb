@@ -114,6 +114,32 @@ module VCAP::CloudController
         end
       end
 
+      context 'when environment_variables chooses an execution backend' do
+        let(:backend) { 'vm-firecracker' }
+        let(:params) do
+          {
+            name: 'name',
+            environment_variables: { CF_EXECUTION_BACKEND: backend },
+            relationships: { space: { data: { guid: 'guid' } } }
+          }
+        end
+
+        it 'is valid for a known backend' do
+          expect(AppCreateMessage.new(params)).to be_valid
+        end
+
+        context 'when the backend is unknown' do
+          let(:backend) { 'firecracker' }
+
+          it 'is not valid' do
+            message = AppCreateMessage.new(params)
+
+            expect(message).not_to be_valid
+            expect(message.errors_on(:environment_variables)).to include('CF_EXECUTION_BACKEND must be one of oci-runc, oci-gvisor, vm-qemu, or vm-firecracker')
+          end
+        end
+      end
+
       describe 'relationships' do
         context 'when relationships is malformed' do
           let(:params) do

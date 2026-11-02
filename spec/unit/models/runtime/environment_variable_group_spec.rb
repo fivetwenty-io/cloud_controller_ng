@@ -98,6 +98,12 @@ module VCAP::CloudController
             create(:environment_variable_group, environment_json: { 'VCAP_SERVICES' => {} })
           end.to raise_error(Sequel::ValidationFailed, /cannot start with VCAP_/)
         end
+
+        it 'rejects an unknown execution backend' do
+          expect do
+            create(:environment_variable_group, environment_json: { 'CF_EXECUTION_BACKEND' => 'vm' })
+          end.to raise_error(Sequel::ValidationFailed, /CF_EXECUTION_BACKEND must be one of/)
+        end
       end
     end
 

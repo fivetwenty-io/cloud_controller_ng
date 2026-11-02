@@ -124,6 +124,10 @@ module VCAP::CloudController
       end
       VCAP::CloudController::Validators::EnvironmentVariablesValidator.
         validate_each(self, :environment_variables, environment_variables)
+      return unless new? || column_changed?(:encrypted_environment_variables)
+
+      VCAP::CloudController::Validators::ExecutionBackendValidator.
+        validate_each(self, :environment_variables, environment_variables)
     end
 
     def organization
