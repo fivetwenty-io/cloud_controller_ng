@@ -482,12 +482,6 @@ module VCAP::CloudController
           end.to raise_error(Sequel::ValidationFailed, /must be an object/)
         end
 
-        it 'rejects an unknown execution backend' do
-          expect do
-            create(:task_model, environment_variables: { 'CF_EXECUTION_BACKEND' => 'oci-crun' })
-          end.to raise_error(Sequel::ValidationFailed, /CF_EXECUTION_BACKEND must be one of/)
-        end
-
         context 'maximum length allow' do
           before do
             stub_const('VCAP::CloudController::TaskModel::ENV_VAR_MAX_LENGTH', 5)

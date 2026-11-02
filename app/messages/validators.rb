@@ -112,10 +112,14 @@ module VCAP::CloudController::Validators
     ENV_VAR_NAME = 'CF_EXECUTION_BACKEND'.freeze
     BACKENDS = %w[oci-runc oci-gvisor vm-qemu vm-firecracker].freeze
 
-    def validate_each(record, attribute, value)
+    def self.backend_in(value)
       return unless value.is_a?(Hash)
 
-      backend = value[ENV_VAR_NAME] || value[ENV_VAR_NAME.to_sym]
+      value.key?(ENV_VAR_NAME) ? value[ENV_VAR_NAME] : value[ENV_VAR_NAME.to_sym]
+    end
+
+    def validate_each(record, attribute, value)
+      backend = self.class.backend_in(value)
       return if backend.nil? || backend.to_s.empty? || BACKENDS.include?(backend.to_s)
 
       record.errors.add(attribute, message: "#{ENV_VAR_NAME} must be one of #{BACKENDS[0..-2].join(', ')}, or #{BACKENDS.last}")

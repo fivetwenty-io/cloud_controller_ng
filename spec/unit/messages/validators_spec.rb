@@ -304,6 +304,14 @@ module VCAP::CloudController::Validators
         expect(fake_class).not_to be_valid
       end
 
+      it 'rejects a false value under a string key' do
+        expect(execution_backend_class.new(field: { 'CF_EXECUTION_BACKEND' => false })).not_to be_valid
+      end
+
+      it 'rejects a false value under a symbol key' do
+        expect(execution_backend_class.new(field: { CF_EXECUTION_BACKEND: false })).not_to be_valid
+      end
+
       it 'checks only the exact variable name' do
         expect(execution_backend_class.new(field: { cf_execution_backend: 'anything' })).to be_valid
       end

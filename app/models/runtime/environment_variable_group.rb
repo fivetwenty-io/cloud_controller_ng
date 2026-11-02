@@ -20,10 +20,18 @@ module VCAP::CloudController
 
       VCAP::CloudController::Validators::EnvironmentVariablesValidator.
         validate_each(self, :environment_json, environment_json)
-      return unless new? || column_changed?(:environment_json)
+      return unless execution_backend_changed?
 
       VCAP::CloudController::Validators::ExecutionBackendValidator.
         validate_each(self, :environment_json, environment_json)
+    end
+
+    def execution_backend_changed?
+      return true if new?
+      return false unless column_changed?(:environment_json)
+
+      previous_backend = VCAP::CloudController::Validators::ExecutionBackendValidator.backend_in(initial_value(:environment_json))
+      previous_backend != VCAP::CloudController::Validators::ExecutionBackendValidator.backend_in(environment_json)
     end
 
     def environment_json_with_serialization=(env)

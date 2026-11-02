@@ -3,6 +3,9 @@ module VCAP::CloudController
     class EnvironmentVariableGroupTooLong < StandardError
     end
 
+    class InvalidEnvironmentVariableGroup < StandardError
+    end
+
     def patch(env_var_group, message)
       env_var_group.db.transaction do
         env_var_group.lock!
@@ -12,6 +15,8 @@ module VCAP::CloudController
       end
 
       env_var_group
+    rescue Sequel::ValidationFailed => e
+      raise InvalidEnvironmentVariableGroup.new(e.message)
     rescue Sequel::DatabaseError => e
       raise EnvironmentVariableGroupTooLong if e.message.include?("Mysql2::Error: Data too long for column 'environment_json'")
 

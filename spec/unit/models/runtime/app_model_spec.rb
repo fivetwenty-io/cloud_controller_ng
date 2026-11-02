@@ -272,8 +272,24 @@ module VCAP::CloudController
             expect(app.reload.name).to eq('renamed')
           end
 
-          it 'rejects a change to the environment that keeps the unknown backend' do
+          it 'accepts a change to the environment that keeps the unknown backend' do
             app.environment_variables = app.environment_variables.merge('OTHER' => 'value')
+            expect { app.save }.not_to raise_error
+          end
+
+          it 'accepts re-encrypting the same environment under new encryption settings' do
+            allow(VCAP::CloudController::Encryptor).to receive(:pbkdf2_hmac_iterations).and_return(VCAP::CloudController::Encryptor::ENCRYPTION_ITERATIONS + 1)
+            app.environment_variables = app.environment_variables.dup
+            expect { app.save }.not_to raise_error
+          end
+
+          it 'rejects a change to another unknown backend' do
+            app.environment_variables = { 'CF_EXECUTION_BACKEND' => 'other' }
+            expect { app.save }.to raise_error(Sequel::ValidationFailed, /CF_EXECUTION_BACKEND must be one of/)
+          end
+
+          it 'rejects a false backend value under a string key' do
+            app.environment_variables = { 'CF_EXECUTION_BACKEND' => false }
             expect { app.save }.to raise_error(Sequel::ValidationFailed, /CF_EXECUTION_BACKEND must be one of/)
           end
         end

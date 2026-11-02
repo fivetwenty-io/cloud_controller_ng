@@ -196,12 +196,23 @@ module VCAP::CloudController
       VCAP::CloudController::Validators::EnvironmentVariablesValidator.
         validate_each(self, :environment_variables, environment_variables)
 
-      # Only a change is checked, so an app saved before the check existed can
-      # still be stopped, renamed, or scaled until someone fixes its value.
-      return unless new? || column_changed?(:encrypted_environment_variables)
+      # Only a change to the backend value is checked, so an app saved before
+      # the check existed can still be stopped, renamed, or scaled until
+      # someone fixes its value.
+      return unless execution_backend_changed?
 
       VCAP::CloudController::Validators::ExecutionBackendValidator.
         validate_each(self, :environment_variables, environment_variables)
+    end
+
+    def execution_backend_changed?
+      return true if new?
+      return false unless column_changed?(:encrypted_environment_variables)
+
+      previous = Encryptor.decrypt(initial_value(:encrypted_environment_variables), initial_value(:salt),
+                                   iterations: initial_value(:encryption_iterations), label: initial_value(:encryption_key_label))
+      previous_backend = VCAP::CloudController::Validators::ExecutionBackendValidator.backend_in(previous && Oj.load(previous))
+      previous_backend != VCAP::CloudController::Validators::ExecutionBackendValidator.backend_in(environment_variables)
     end
 
     def validate_droplet_is_staged

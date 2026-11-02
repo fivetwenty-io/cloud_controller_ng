@@ -322,6 +322,8 @@ class AppsV3Controller < ApplicationController
     app = AppPatchEnvironmentVariables.new(user_audit_info).patch(app, message)
 
     render status: :ok, json: Presenters::V3::AppEnvironmentVariablesPresenter.new(app)
+  rescue AppPatchEnvironmentVariables::InvalidApp => e
+    unprocessable!(e.message)
   end
 
   def assign_current_droplet
